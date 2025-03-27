@@ -4,10 +4,6 @@
 *       26-Mar 2025
 =============================================================================*/
 
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>  //printf
-#include <string.h> //memcpy
 #include "list.h"
 
 List* List_Create(size_t itemSize, size_t capacity)
@@ -32,19 +28,7 @@ List* List_Create(size_t itemSize, size_t capacity)
 
 void List_Destroy(List* list, DestroyFunc destroyFunc)
 {
-    if(!list)
-    {
-        return;
-    }
-
-    if (destroyFunc)
-    {
-        for(size_t i = 0; i<list->count; i++)
-        {
-            void* item = (char*)list->data + (i * list->itemSize);
-            destroyFunc(item);
-        }
-    }
+    List_Clear(list, destroyFunc);
     free(list->data);
     free(list);
 }
@@ -96,7 +80,7 @@ int List_Pop(List* list, void* item)
     return 1;
 }
 
-void* List_Get(List* list, size_t index)
+void* List_Get(const List* list, size_t index)
 {
     if(!list || index >= list->count)
     {

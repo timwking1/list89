@@ -4,8 +4,15 @@
 *       26-Mar 2025
 =============================================================================*/
 
-#include <stdlib.h> //size_t
-#include <string.h> //memcpy
+/*
+*   stddef.h - size_t
+*   stdlib.h - qsort, malloc, realloc, free, etc.
+*   string.h - memcpy
+*/ 
+
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct
 {

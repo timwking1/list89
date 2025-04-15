@@ -35,21 +35,25 @@ void List_Destroy(List* list, DestroyFunc destroyFunc)
 
 static int List_Resize(List* list)
 {
-    size_t capacity = list->capacity * 2;
-    void* newData = realloc(list->data, list->itemSize * capacity);
+    size_t capacity;
+    char* newData;
 
+    capacity = list->capacity * 2;
+    newData = (char*)realloc(list->data, list->itemSize * capacity);
     if(!newData)
     {
         return 0;
     }
 
-    list->data = newData;
+    list->data = (void*)newData;
     list->capacity = capacity;
     return 1;
 }
 
 int List_Push(List* list, const void* item)
 {
+    void* dest;
+
     if(!list || !item)
     {
         return 0;
@@ -61,7 +65,7 @@ int List_Push(List* list, const void* item)
             return 0;
         }
     }
-    void* dest = (char*)list->data + (list->count * list->itemSize);
+    dest = (char*)list->data + (list->count * list->itemSize);
     memcpy(dest, item, list->itemSize);
     list->count++;
     return 1;
@@ -69,13 +73,15 @@ int List_Push(List* list, const void* item)
 
 int List_Pop(List* list, void* item)
 {
+    void* src;
+
     if (!list || !item || list->count <= 0)
     {
         return 0;
     }
 
     list->count--;
-    void* src = (char*)list->data + (list->count * list->itemSize);
+    src = (char*)list->data + (list->count * list->itemSize);
     memcpy(item, src, list->itemSize);
     return 1;
 }
@@ -91,11 +97,12 @@ void* List_Get(const List* list, size_t index)
 
 int List_Set(List* list, size_t index, const void* item)
 {
+    void* dest;
     if(!list || !item || index >= list->count)
     {
         return 0;
     }
-    void* dest = (char*)list->data + (index * list->itemSize);
+    dest = (char*)list->data + (index * list->itemSize);
     memcpy(dest, item, list->itemSize);
     return 1;
 }
@@ -114,33 +121,36 @@ void List_Sort(List* list, CompareFunc compareFunc)
     qsort(list->data, list->count, list->itemSize, compareFunc); 
 }
 
-// Capacity management
+/* Capacity management */
 void List_Reserve(List* list, size_t newCapacity)
 {
+    char* newData;
+
     if(!list || newCapacity <= list->capacity)
     {
         return;
     }
-
-    void* newData = realloc(list->data, list->itemSize * newCapacity);
+    newData = (char*)realloc(list->data, list->itemSize * newCapacity);
     if(newData)
     {
-        list->data = newData;
+        list->data = (void*)newData;
         list->capacity = newCapacity;
     }
 }
 
 void List_ShrinkToFit(List* list)
 {
+    char* newData;
+
     if(!list || list->count == list->capacity)
     {
         return;
     }
 
-    void* newData = realloc(list->data, list->itemSize * list->count);
+    newData = (char*)realloc(list->data, list->itemSize * list->count);
     if(newData)
     {
-        list->data = newData;
+        list->data = (void*)newData;
         list->capacity = list->count;
     }
 }
@@ -150,7 +160,7 @@ size_t List_Capacity(const List* list)
     return list ? list->capacity : 0;
 }
 
-// Element access
+/* Element access */
 void* List_Front(const List* list)
 {
     return List_Get(list, 0);
@@ -170,9 +180,13 @@ void* List_At(List* list, size_t index)
     return List_Get(list, index);
 }
 
-// Modifiers
+/* Modifiers */
 int List_Insert(List* list, size_t index, const void* item)
 {
+    void* dest;
+    void* src;
+    size_t shiftSize;
+
     if(!list || !item || index > list->count)
     {
         return 0;
@@ -186,13 +200,13 @@ int List_Insert(List* list, size_t index, const void* item)
         }
     }
 
-    // Shift elements to make space
-    void* dest = (char*)list->data + ((index + 1) * list->itemSize);
-    void* src = (char*)list->data + (index * list->itemSize);
-    size_t shiftSize = (list->count - index) * list->itemSize;
+    /* Shift elements to make space */
+    dest = (char*)list->data + ((index + 1) * list->itemSize);
+    src = (char*)list->data + (index * list->itemSize);
+    shiftSize = (list->count - index) * list->itemSize;
     memmove(dest, src, shiftSize);
 
-    // Insert new element
+    /* Insert new element */
     dest = (char*)list->data + (index * list->itemSize);
     memcpy(dest, item, list->itemSize);
     list->count++;
@@ -201,15 +215,19 @@ int List_Insert(List* list, size_t index, const void* item)
 
 int List_Erase(List* list, size_t index)
 {
+    void* dest;
+    void* src;
+    size_t shiftSize;
+
     if(!list || index >= list->count)
     {
         return 0;
     }
 
-    // Shift elements to remove gap
-    void* dest = (char*)list->data + (index * list->itemSize);
-    void* src = (char*)list->data + ((index + 1) * list->itemSize);
-    size_t shiftSize = (list->count - index - 1) * list->itemSize;
+    /* Shift elements to remove gap */
+    dest = (char*)list->data + (index * list->itemSize);
+    src = (char*)list->data + ((index + 1) * list->itemSize);
+    shiftSize = (list->count - index - 1) * list->itemSize;
     memmove(dest, src, shiftSize);
 
     list->count--;
@@ -218,6 +236,8 @@ int List_Erase(List* list, size_t index)
 
 void List_Clear(List* list, DestroyFunc destroyFunc)
 {
+    size_t i;
+
     if(!list)
     {
         return;
@@ -225,7 +245,7 @@ void List_Clear(List* list, DestroyFunc destroyFunc)
 
     if(destroyFunc)
     {
-        for(size_t i = 0; i < list->count; i++)
+        for(i = 0; i < list->count; i++)
         {
             void* item = (char*)list->data + (i * list->itemSize);
             destroyFunc(item);
@@ -236,6 +256,10 @@ void List_Clear(List* list, DestroyFunc destroyFunc)
 
 int List_Assign(List* list, size_t count, const void* value)
 {
+    char* newData;
+    size_t i;
+    void* dest;
+
     if(!list || !value)
     {
         return 0;
@@ -243,18 +267,18 @@ int List_Assign(List* list, size_t count, const void* value)
 
     if(count > list->capacity)
     {
-        void* newData = realloc(list->data, list->itemSize * count);
+        newData = (char*)realloc(list->data, list->itemSize * count);
         if(!newData)
         {
             return 0;
         }
-        list->data = newData;
+        list->data = (void*)newData;
         list->capacity = count;
     }
 
-    for(size_t i = 0; i < count; i++)
+    for(i = 0; i < count; i++)
     {
-        void* dest = (char*)list->data + (i * list->itemSize);
+        dest = (char*)list->data + (i * list->itemSize);
         memcpy(dest, value, list->itemSize);
     }
     list->count = count;
@@ -263,14 +287,17 @@ int List_Assign(List* list, size_t count, const void* value)
 
 int List_Contains(const List* list, const void* item, CompareFunc compareFunc)
 {
+    size_t i;
+    void* current;
+
     if(!list || !item || !compareFunc)
     {
         return 0;
     }
 
-    for(size_t i = 0; i < list->count; i++)
+    for(i = 0; i < list->count; i++)
     {
-        void* current = (char*)list->data + (i * list->itemSize);
+        current = (char*)list->data + (i * list->itemSize);
         if(compareFunc(current, item) == 0)
         {
             return 1;
@@ -281,14 +308,17 @@ int List_Contains(const List* list, const void* item, CompareFunc compareFunc)
 
 int List_Remove(List* list, const void* item, CompareFunc compareFunc)
 {
+    size_t i;
+    void* current;
+
     if(!list || !item || !compareFunc)
     {
         return 0;
     }
 
-    for(size_t i = 0; i < list->count; i++)
+    for(i = 0; i < list->count; i++)
     {
-        void* current = (char*)list->data + (i * list->itemSize);
+        current = (char*)list->data + (i * list->itemSize);
         if(compareFunc(current, item) == 0)
         {
             return List_Erase(list, i);
@@ -299,47 +329,65 @@ int List_Remove(List* list, const void* item, CompareFunc compareFunc)
 
 void List_Reverse(List* list)
 {
+    char* temp = malloc(list->itemSize);
+    size_t i;
+    void* left;
+    void* right;
+
     if(!list || list->count <= 1)
     {
         return;
     }
 
-    char* temp = malloc(list->itemSize);
     if(!temp)
     {
         return;
     }
-
-    for(size_t i = 0; i < list->count / 2; i++)
+    /* check so we don't divide by 0 */
+    if(list->count > 0)
     {
-        void* left = (char*)list->data + (i * list->itemSize);
-        void* right = (char*)list->data + ((list->count - 1 - i) * list->itemSize);
-        
-        memcpy(temp, left, list->itemSize);
-        memcpy(left, right, list->itemSize);
-        memcpy(right, temp, list->itemSize);
+        for(i = 0; i < list->count / 2; i++)
+        {
+            left = (char*)list->data + (i * list->itemSize);
+            right = (char*)list->data + ((list->count - 1 - i) * list->itemSize);
+            
+            memcpy(temp, left, list->itemSize);
+            memcpy(left, right, list->itemSize);
+            memcpy(right, temp, list->itemSize);
+        }
+        free(temp);
     }
-    free(temp);
+    else
+    {
+        free(temp);
+        return;
+    }
 }
 
 int List_Unique(List* list, CompareFunc compareFunc)
 {
+    size_t writeIndex;
+    size_t readIndex;
+    void* current;
+    void* previous;
+    void* dest;
+
     if(!list || !compareFunc || list->count <= 1)
     {
         return 0;
     }
 
-    size_t writeIndex = 1;
-    for(size_t readIndex = 1; readIndex < list->count; readIndex++)
+    writeIndex = 1;
+    for(readIndex = 1; readIndex < list->count; readIndex++)
     {
-        void* current = (char*)list->data + (readIndex * list->itemSize);
-        void* previous = (char*)list->data + ((writeIndex - 1) * list->itemSize);
+        current = (char*)list->data + (readIndex * list->itemSize);
+        previous = (char*)list->data + ((writeIndex - 1) * list->itemSize);
         
         if(compareFunc(current, previous) != 0)
         {
             if(writeIndex != readIndex)
             {
-                void* dest = (char*)list->data + (writeIndex * list->itemSize);
+                dest = (char*)list->data + (writeIndex * list->itemSize);
                 memcpy(dest, current, list->itemSize);
             }
             writeIndex++;
@@ -350,7 +398,7 @@ int List_Unique(List* list, CompareFunc compareFunc)
     return 1;
 }
 
-// Iterator implementation
+/* Iterator implementation */
 ListIterator List_Begin(List* list)
 {
     ListIterator it = {list, 0};

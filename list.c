@@ -33,7 +33,7 @@ void List_Destroy(List* list, DestroyFunc destroyFunc)
     free(list);
 }
 
-static int List_Resize(List* list)
+int List_Resize(List* list)
 {
     size_t capacity;
     char* newData;
@@ -401,13 +401,17 @@ int List_Unique(List* list, CompareFunc compareFunc)
 /* Iterator implementation */
 ListIterator List_Begin(List* list)
 {
-    ListIterator it = {list, 0};
+    ListIterator it;
+    it.list = list;
+    it.current = 0;
     return it;
 }
 
 ListIterator List_End(List* list)
 {
-    ListIterator it = {list, list ? list->count : 0};
+    ListIterator it;
+    it.list = list;
+    it.current = list ? list->count : 0;
     return it;
 }
 

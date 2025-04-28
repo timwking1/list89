@@ -54,7 +54,7 @@ void* List_At(List* list, size_t index);
 void List_Reserve(List* list, size_t newCapacity);
 void List_ShrinkToFit(List* list);
 size_t List_Capacity(const List* list);
-static int List_Resize(List* list);
+int List_Resize(List* list);
 
 /*=============================================================================
 *       Modifiers
